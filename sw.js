@@ -1,6 +1,6 @@
 // Service Worker for Flight Miles vs Cash Advisor
-// Version: 1.0.0
-const CACHE_NAME = 'miles-advisor-v1.0.0';
+// Version: 1.1.0
+const CACHE_NAME = 'miles-advisor-v1.1.0';
 
 const PRECACHE_ASSETS = [
   './',
@@ -13,6 +13,8 @@ const PRECACHE_ASSETS = [
   './js/valuationLogic.js',
   './js/storage.js',
   './js/translations.js',
+  './js/qrcode.min.js',
+  './js/syncService.js',
   './js/app.js',
   './icons/icon-192.png',
   './icons/icon-512.png',

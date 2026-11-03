@@ -47,6 +47,10 @@ function initApp() {
   renderBenchmarkSettings();
   renderAirportOptions();
   applyLanguage(AppState.language);
+  initSyncUI();
+  if (typeof SyncService !== 'undefined') {
+    SyncService.init();
+  }
   recalculateAll();
   lucide.createIcons();
 }
@@ -131,6 +135,7 @@ function applyLanguage(lang) {
   if (destInput && !destInput.value) destInput.placeholder = t.routeTo;
 
   updateAirportInputDisplays();
+  initSyncUI();
   recalculateAll();
   lucide.createIcons();
 }
@@ -207,6 +212,41 @@ function setupEventListeners() {
   if (closeModalBtn) closeModalBtn.addEventListener('click', closeCardModal);
   if (cancelModalBtn) cancelModalBtn.addEventListener('click', closeCardModal);
   if (editCardForm) editCardForm.addEventListener('submit', handleSaveCardModal);
+
+  // Cloud Sync Modal triggers
+  const openSyncBtnDesktop = document.getElementById('btn-sync-status');
+  const openSyncBtnMobile = document.getElementById('btn-sync-status-mobile');
+  const closeSyncBtnTop = document.getElementById('btn-close-sync-modal');
+  const closeSyncBtnBottom = document.getElementById('btn-close-sync-modal-bottom');
+  const generateSyncKeyBtn = document.getElementById('btn-generate-sync-key');
+  const connectSyncBtn = document.getElementById('btn-connect-sync');
+  const manualSyncBtn = document.getElementById('btn-manual-sync');
+  const disconnectSyncBtn = document.getElementById('btn-disconnect-sync');
+  const copySyncLinkBtn = document.getElementById('btn-copy-sync-link');
+
+  if (openSyncBtnDesktop) openSyncBtnDesktop.addEventListener('click', openSyncModal);
+  if (openSyncBtnMobile) openSyncBtnMobile.addEventListener('click', openSyncModal);
+  if (closeSyncBtnTop) closeSyncBtnTop.addEventListener('click', closeSyncModal);
+  if (closeSyncBtnBottom) closeSyncBtnBottom.addEventListener('click', closeSyncModal);
+  if (generateSyncKeyBtn) generateSyncKeyBtn.addEventListener('click', handleGenerateSyncKey);
+  if (connectSyncBtn) connectSyncBtn.addEventListener('click', handleConnectSync);
+  if (manualSyncBtn) manualSyncBtn.addEventListener('click', handleManualSync);
+  if (disconnectSyncBtn) disconnectSyncBtn.addEventListener('click', handleDisconnectSync);
+  if (copySyncLinkBtn) copySyncLinkBtn.addEventListener('click', handleCopySyncLink);
+
+  // Listen to cross-device sync status and data reloads
+  window.addEventListener('miles-sync-status-changed', (e) => {
+    updateSyncPillUI(e.detail);
+  });
+
+  window.addEventListener('miles-data-reloaded', () => {
+    loadSavedData();
+    renderCardSelector();
+    renderCardsCatalog();
+    renderValuationHistory();
+    renderBenchmarkSettings();
+    recalculateAll();
+  });
 
   // Form Inputs live updates
   const cashInput = document.getElementById('input-cash-price');
@@ -1519,4 +1559,256 @@ function parseRawNumber(str) {
   if (!str) return 0;
   const cleaned = str.toString().replace(/[^0-9]/g, '');
   return Number(cleaned) || 0;
+}
+
+/**
+ * ==========================================
+ * CROSS-DEVICE CLOUD SYNC UI CONTROLLER
+ * ==========================================
+ */
+
+let qrCodeInstance = null;
+
+function initSyncUI() {
+  if (typeof SyncService === 'undefined') return;
+  updateSyncPillUI(SyncService.getSyncInfo());
+}
+
+function updateSyncPillUI(syncInfo) {
+  const info = syncInfo || (typeof SyncService !== 'undefined' ? SyncService.getSyncInfo() : null);
+  if (!info) return;
+
+  const t = TRANSLATIONS[AppState.language]?.sync || TRANSLATIONS.en.sync;
+  const statusText = document.getElementById('sync-status-text');
+  const desktopBtn = document.getElementById('btn-sync-status');
+  const statusIcons = document.querySelectorAll('.sync-status-icon');
+
+  if (statusText) {
+    if (info.status === 'synced') {
+      statusText.textContent = t.pillSynced;
+    } else if (info.status === 'syncing') {
+      statusText.textContent = t.pillSyncing;
+    } else if (info.status === 'offline') {
+      statusText.textContent = t.pillOffline;
+    } else if (info.status === 'error') {
+      statusText.textContent = t.pillError;
+    } else {
+      statusText.textContent = t.pillDisconnected;
+    }
+  }
+
+  statusIcons.forEach(icon => {
+    icon.classList.remove('text-cyan-400', 'text-emerald-400', 'text-blue-400', 'text-amber-400', 'text-rose-400', 'animate-spin');
+    if (info.status === 'synced') {
+      icon.classList.add('text-emerald-400');
+      icon.setAttribute('data-lucide', 'cloud');
+    } else if (info.status === 'syncing') {
+      icon.classList.add('text-blue-400', 'animate-spin');
+      icon.setAttribute('data-lucide', 'refresh-cw');
+    } else if (info.status === 'offline') {
+      icon.classList.add('text-amber-400');
+      icon.setAttribute('data-lucide', 'cloud-off');
+    } else if (info.status === 'error') {
+      icon.classList.add('text-rose-400');
+      icon.setAttribute('data-lucide', 'cloud-alert');
+    } else {
+      icon.classList.add('text-cyan-400');
+      icon.setAttribute('data-lucide', 'cloud');
+    }
+  });
+
+  if (desktopBtn) {
+    desktopBtn.classList.remove('border-emerald-600/40', 'border-blue-600/40', 'border-rose-600/40');
+    if (info.status === 'synced') {
+      desktopBtn.classList.add('border-emerald-600/40');
+    } else if (info.status === 'syncing') {
+      desktopBtn.classList.add('border-blue-600/40');
+    } else if (info.status === 'error') {
+      desktopBtn.classList.add('border-rose-600/40');
+    }
+  }
+
+  // Update modal contents if modal is open
+  updateSyncModalUI(info);
+  lucide.createIcons();
+}
+
+function updateSyncModalUI(info) {
+  const t = TRANSLATIONS[AppState.language]?.sync || TRANSLATIONS.en.sync;
+  const statusDot = document.getElementById('sync-status-dot');
+  const connTitle = document.getElementById('sync-connection-title');
+  const lastTime = document.getElementById('sync-last-time');
+  const vaultPill = document.getElementById('sync-vault-pill');
+  const shareSection = document.getElementById('sync-share-section');
+  const manualSyncBtn = document.getElementById('btn-manual-sync');
+  const disconnectBtn = document.getElementById('btn-disconnect-sync');
+  const keyInput = document.getElementById('input-sync-key');
+  const shareUrlInput = document.getElementById('input-sync-share-url');
+
+  if (!statusDot || !connTitle) return;
+
+  statusDot.classList.remove('bg-emerald-500', 'bg-blue-500', 'bg-amber-500', 'bg-rose-500', 'bg-slate-500');
+
+  if (info.isConnected) {
+    statusDot.classList.add(info.status === 'synced' ? 'bg-emerald-500' : (info.status === 'syncing' ? 'bg-blue-500' : 'bg-amber-500'));
+    connTitle.textContent = `${t.statusConnected} (${info.syncKey})`;
+    
+    if (info.lastSynced) {
+      const dateStr = new Date(info.lastSynced).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      lastTime.textContent = `${t.lastSynced} ${dateStr}`;
+    } else {
+      lastTime.textContent = 'Syncing...';
+    }
+
+    if (vaultPill) {
+      vaultPill.textContent = `Vault: ${info.vaultId.substring(0, 10)}...`;
+      vaultPill.classList.remove('hidden');
+    }
+
+    if (shareSection) shareSection.classList.remove('hidden');
+    if (manualSyncBtn) manualSyncBtn.classList.remove('hidden');
+    if (disconnectBtn) disconnectBtn.classList.remove('hidden');
+
+    if (keyInput && !keyInput.value) {
+      keyInput.value = info.syncKey;
+    }
+
+    // Generate Share URL and QR code
+    const shareUrl = SyncService.getSyncShareUrl();
+    if (shareUrlInput) shareUrlInput.value = shareUrl;
+    renderSyncQRCode(shareUrl);
+
+  } else {
+    statusDot.classList.add('bg-slate-500');
+    connTitle.textContent = t.statusNotConnected;
+    lastTime.textContent = 'Changes stay on this device only.';
+    if (vaultPill) vaultPill.classList.add('hidden');
+    if (shareSection) shareSection.classList.add('hidden');
+    if (manualSyncBtn) manualSyncBtn.classList.add('hidden');
+    if (disconnectBtn) disconnectBtn.classList.add('hidden');
+  }
+}
+
+function renderSyncQRCode(url) {
+  const qrContainer = document.getElementById('sync-qrcode');
+  if (!qrContainer || !url || typeof QRCode === 'undefined') return;
+
+  qrContainer.innerHTML = '';
+  try {
+    qrCodeInstance = new QRCode(qrContainer, {
+      text: url,
+      width: 160,
+      height: 160,
+      colorDark: '#000000',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  } catch (err) {
+    console.warn('QR Code generation error:', err);
+  }
+}
+
+function openSyncModal() {
+  const modal = document.getElementById('modal-cloud-sync');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  if (typeof SyncService !== 'undefined') {
+    updateSyncPillUI(SyncService.getSyncInfo());
+  }
+}
+
+function closeSyncModal() {
+  const modal = document.getElementById('modal-cloud-sync');
+  if (modal) modal.classList.add('hidden');
+}
+
+function handleGenerateSyncKey() {
+  if (typeof SyncService === 'undefined') return;
+  const newKey = SyncService.generateRandomKey();
+  const input = document.getElementById('input-sync-key');
+  if (input) input.value = newKey;
+}
+
+async function handleConnectSync() {
+  if (typeof SyncService === 'undefined') return;
+  const input = document.getElementById('input-sync-key');
+  if (!input || !input.value.trim()) {
+    alert('Please enter a Sync Key (at least 4 characters)');
+    return;
+  }
+
+  const connectBtn = document.getElementById('btn-connect-sync');
+  if (connectBtn) {
+    connectBtn.disabled = true;
+    connectBtn.textContent = 'Connecting...';
+  }
+
+  try {
+    await SyncService.connect(input.value.trim());
+    const t = TRANSLATIONS[AppState.language]?.sync || TRANSLATIONS.en.sync;
+    showToast(t.toastConnected);
+  } catch (err) {
+    alert('Connection failed: ' + err.message);
+  } finally {
+    if (connectBtn) {
+      connectBtn.disabled = false;
+      const t = TRANSLATIONS[AppState.language]?.sync || TRANSLATIONS.en.sync;
+      connectBtn.textContent = t.btnConnect;
+    }
+  }
+}
+
+async function handleManualSync() {
+  if (typeof SyncService === 'undefined') return;
+  const btn = document.getElementById('btn-manual-sync');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Syncing...';
+  }
+
+  try {
+    const pulled = await SyncService.pullFromCloud();
+    const pushed = await SyncService.pushToCloud();
+    const t = TRANSLATIONS[AppState.language]?.sync || TRANSLATIONS.en.sync;
+    if (pulled || pushed) {
+      showToast(t.toastSynced);
+    } else {
+      showToast(t.toastSynced);
+    }
+  } catch (err) {
+    const t = TRANSLATIONS[AppState.language]?.sync || TRANSLATIONS.en.sync;
+    showToast(t.toastError);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      const t = TRANSLATIONS[AppState.language]?.sync || TRANSLATIONS.en.sync;
+      btn.textContent = t.btnSyncNow;
+    }
+  }
+}
+
+function handleDisconnectSync() {
+  if (typeof SyncService === 'undefined') return;
+  const confirmMsg = AppState.language === 'id' 
+    ? 'Putuskan hubungan sinkronisasi? Data lokal Anda akan tetap aman di perangkat ini.' 
+    : 'Disconnect from cloud sync? Your local data will remain safe on this device.';
+  if (confirm(confirmMsg)) {
+    SyncService.disconnect();
+    const input = document.getElementById('input-sync-key');
+    if (input) input.value = '';
+    const t = TRANSLATIONS[AppState.language]?.sync || TRANSLATIONS.en.sync;
+    showToast(t.toastDisconnected);
+  }
+}
+
+function handleCopySyncLink() {
+  const input = document.getElementById('input-sync-share-url');
+  if (!input || !input.value) return;
+
+  navigator.clipboard.writeText(input.value).then(() => {
+    const t = TRANSLATIONS[AppState.language]?.sync || TRANSLATIONS.en.sync;
+    showToast(t.toastCopied);
+  }).catch(() => {
+    prompt('Copy your 1-Click Sync link:', input.value);
+  });
 }

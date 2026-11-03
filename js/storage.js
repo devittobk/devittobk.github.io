@@ -14,6 +14,12 @@ const STORAGE_KEYS = {
   FILTER_OWNED_ONLY: 'id_miles_calc_filter_owned_v1'
 };
 
+function notifyStorageUpdated() {
+  if (typeof SyncService !== 'undefined' && SyncService.markLocalDataModified) {
+    SyncService.markLocalDataModified();
+  }
+}
+
 /**
  * Get saved theme ('amoled' by default)
  */
@@ -78,6 +84,7 @@ function saveCardOverride(cardId, data) {
       lastModified: new Date().toISOString()
     };
     localStorage.setItem(STORAGE_KEYS.CARD_OVERRIDES, JSON.stringify(current));
+    notifyStorageUpdated();
     return true;
   } catch (err) {
     console.error('Error saving card override:', err);
@@ -90,6 +97,7 @@ function resetCardOverride(cardId) {
     const current = getCardOverrides();
     delete current[cardId];
     localStorage.setItem(STORAGE_KEYS.CARD_OVERRIDES, JSON.stringify(current));
+    notifyStorageUpdated();
     return true;
   } catch (err) {
     return false;
@@ -121,6 +129,7 @@ function getOwnedCardIds() {
 function setOwnedCardIds(ids) {
   try {
     localStorage.setItem(STORAGE_KEYS.OWNED_CARDS, JSON.stringify(ids));
+    notifyStorageUpdated();
     return true;
   } catch (err) {
     return false;
@@ -190,6 +199,7 @@ function saveCustomCard(cardData) {
       setOwnedCardIds(owned);
     }
 
+    notifyStorageUpdated();
     return newCard;
   } catch (err) {
     console.error('Error saving custom card:', err);
@@ -206,6 +216,7 @@ function deleteCustomCard(cardId) {
     let owned = getOwnedCardIds();
     owned = owned.filter(id => id !== cardId);
     setOwnedCardIds(owned);
+    notifyStorageUpdated();
     return true;
   } catch (err) {
     return false;
@@ -255,6 +266,7 @@ function saveEvaluation(record) {
     items.unshift(entry);
     const trimmed = items.slice(0, 30);
     localStorage.setItem(STORAGE_KEYS.SAVED_EVALUATIONS, JSON.stringify(trimmed));
+    notifyStorageUpdated();
     return entry;
   } catch (err) {
     return null;
@@ -265,6 +277,7 @@ function deleteSavedEvaluation(id) {
   try {
     const items = getSavedEvaluations().filter(item => item.id !== id);
     localStorage.setItem(STORAGE_KEYS.SAVED_EVALUATIONS, JSON.stringify(items));
+    notifyStorageUpdated();
     return true;
   } catch (err) {
     return false;
@@ -274,6 +287,7 @@ function deleteSavedEvaluation(id) {
 function clearAllSavedEvaluations() {
   try {
     localStorage.removeItem(STORAGE_KEYS.SAVED_EVALUATIONS);
+    notifyStorageUpdated();
     return true;
   } catch (err) {
     return false;
@@ -366,31 +380,90 @@ function buildShareableSummary(evalResult, routeDetails, cardDetails, lang = 'en
   return `Flight: ${routeStr}\nValue: ${formatRate(valuePerMile)}\nVerdict: ${verdict.title}`;
 }
 
+function exportStateBundle() {
+  return {
+    customCards: getCustomCards(),
+    cardOverrides: getCardOverrides(),
+    ownedCardIds: getOwnedCardIds(),
+    evaluations: getSavedEvaluations(),
+    benchmarks: getCustomBenchmarks(),
+    filterOwnedOnly: getFilterOwnedOnly(),
+    theme: getSavedTheme(),
+    lang: getSavedLanguage(),
+    updatedAt: Date.now()
+  };
+}
+
+function importStateBundle(bundle) {
+  if (!bundle || typeof bundle !== 'object') return false;
+  try {
+    if (Array.isArray(bundle.customCards)) {
+      localStorage.setItem(STORAGE_KEYS.CUSTOM_CARDS, JSON.stringify(bundle.customCards));
+    }
+    if (bundle.cardOverrides && typeof bundle.cardOverrides === 'object') {
+      localStorage.setItem(STORAGE_KEYS.CARD_OVERRIDES, JSON.stringify(bundle.cardOverrides));
+    }
+    if (Array.isArray(bundle.ownedCardIds)) {
+      localStorage.setItem(STORAGE_KEYS.OWNED_CARDS, JSON.stringify(bundle.ownedCardIds));
+    }
+    if (Array.isArray(bundle.evaluations)) {
+      localStorage.setItem(STORAGE_KEYS.SAVED_EVALUATIONS, JSON.stringify(bundle.evaluations));
+    }
+    if (bundle.benchmarks && typeof bundle.benchmarks === 'object') {
+      localStorage.setItem(STORAGE_KEYS.CUSTOM_BENCHMARKS, JSON.stringify(bundle.benchmarks));
+    }
+    if (bundle.filterOwnedOnly !== undefined) {
+      localStorage.setItem(STORAGE_KEYS.FILTER_OWNED_ONLY, bundle.filterOwnedOnly ? 'true' : 'false');
+    }
+    if (bundle.theme) {
+      saveTheme(bundle.theme);
+    }
+    if (bundle.lang) {
+      saveLanguage(bundle.lang);
+    }
+    return true;
+  } catch (err) {
+    console.error('Error importing state bundle:', err);
+    return false;
+  }
+}
+
+const StorageService = {
+  STORAGE_KEYS,
+  getSavedTheme,
+  saveTheme,
+  getSavedLanguage,
+  saveLanguage,
+  DEFAULT_OWNED_CARDS,
+  getOwnedCardIds,
+  setOwnedCardIds,
+  toggleCardOwnership,
+  getCustomCards,
+  saveCustomCard,
+  deleteCustomCard,
+  getCardOverrides,
+  saveCardOverride,
+  resetCardOverride,
+  getFilterOwnedOnly,
+  setFilterOwnedOnly,
+  getSavedEvaluations,
+  saveEvaluation,
+  deleteSavedEvaluation,
+  clearAllSavedEvaluations,
+  getCustomBenchmarks,
+  saveCustomBenchmark,
+  resetCustomBenchmarks,
+  buildShareableSummary,
+  exportStateBundle,
+  importStateBundle
+};
+
+if (typeof window !== 'undefined') {
+  window.StorageService = StorageService;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
-    getSavedTheme,
-    saveTheme,
-    getSavedLanguage,
-    saveLanguage,
-    DEFAULT_OWNED_CARDS,
-    getOwnedCardIds,
-    setOwnedCardIds,
-    toggleCardOwnership,
-    getCustomCards,
-    saveCustomCard,
-    deleteCustomCard,
-    getCardOverrides,
-    saveCardOverride,
-    resetCardOverride,
-    getFilterOwnedOnly,
-    setFilterOwnedOnly,
-    getSavedEvaluations,
-    saveEvaluation,
-    deleteSavedEvaluation,
-    clearAllSavedEvaluations,
-    getCustomBenchmarks,
-    saveCustomBenchmark,
-    resetCustomBenchmarks,
-    buildShareableSummary
+    ...StorageService
   };
 }

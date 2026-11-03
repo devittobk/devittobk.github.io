@@ -216,6 +216,33 @@ const TRANSLATIONS = {
       customCardDeleted: "Custom card deleted",
       cardUpdated: "Card parameters updated successfully! 💳",
       cardReset: "Card reset to official bank defaults!"
+    },
+    sync: {
+      pillDisconnected: "Sync Devices",
+      pillSynced: "Synced ✓",
+      pillSyncing: "Syncing...",
+      pillOffline: "Offline",
+      pillError: "Sync Error",
+      modalTitle: "Cloud Sync & Multi-Device Backup",
+      modalSubtitle: "Access your custom cards, earn rates, and limits seamlessly on your phone, laptop, and tablet with End-to-End Encryption.",
+      e2eeBadge: "🔒 256-Bit End-to-End Encrypted (Zero-Knowledge)",
+      statusConnected: "Connected & Syncing",
+      statusNotConnected: "Not Connected (Local Only)",
+      fieldSyncKey: "Secret Sync Key",
+      syncKeyPlaceholder: "e.g. DEVITTO-8899",
+      syncKeyHelp: "Choose any memorable code. Enter this same key on your other devices to sync.",
+      btnGenerateKey: "Generate Random Key",
+      btnConnect: "Connect & Sync Now",
+      btnSyncNow: "Sync Now 🔄",
+      btnDisconnect: "Disconnect",
+      shareTitle: "1-Click Phone QR Code & Sync Link",
+      shareDesc: "Scan with your phone camera or copy the link to open this app on your phone with all your cards synced instantly:",
+      btnCopyLink: "Copy Sync Link 📋",
+      toastCopied: "1-Click Sync link copied to clipboard! 📋",
+      toastConnected: "Connected to cloud sync! ☁️",
+      toastSynced: "Synced with cloud! ✓",
+      toastDisconnected: "Disconnected from cloud sync",
+      toastError: "Sync error. Please check your connection."
     }
   },
   id: {
@@ -430,6 +457,33 @@ const TRANSLATIONS = {
       customCardDeleted: "Kartu kustom telah dihapus",
       cardUpdated: "Parameter kartu berhasil diperbarui! 💳",
       cardReset: "Kartu berhasil direset ke standar resmi bank!"
+    },
+    sync: {
+      pillDisconnected: "Sinkronkan Perangkat",
+      pillSynced: "Tersinkron ✓",
+      pillSyncing: "Sinkronisasi...",
+      pillOffline: "Offline",
+      pillError: "Error Sinkron",
+      modalTitle: "Sinkronisasi Cloud & Cadangan Multi-Perangkat",
+      modalSubtitle: "Akses kartu kustom, earn rate, dan limit Anda di HP, laptop, dan tablet dengan Enkripsi End-to-End.",
+      e2eeBadge: "🔒 Terenkripsi 256-Bit End-to-End (Zero-Knowledge)",
+      statusConnected: "Terhubung & Sinkron",
+      statusNotConnected: "Belum Terhubung (Lokal Saja)",
+      fieldSyncKey: "Kunci Rahasia Sinkronisasi",
+      syncKeyPlaceholder: "contoh: DEVITTO-8899",
+      syncKeyHelp: "Pilih kode yang mudah diingat. Masukkan kode yang sama di perangkat lain untuk sinkron.",
+      btnGenerateKey: "Buat Kunci Acak",
+      btnConnect: "Hubungkan & Sinkronkan",
+      btnSyncNow: "Sinkronkan Sekarang 🔄",
+      btnDisconnect: "Putuskan Hubungan",
+      shareTitle: "QR Code & Link Sinkronisasi 1-Klik",
+      shareDesc: "Scan dengan kamera HP atau salin link di bawah untuk membuka aplikasi di HP dengan data tersinkron langsung:",
+      btnCopyLink: "Salin Link Sinkronisasi 📋",
+      toastCopied: "Link sinkronisasi 1-klik berhasil disalin! 📋",
+      toastConnected: "Berhasil terhubung ke sinkronisasi cloud! ☁️",
+      toastSynced: "Berhasil tersinkronisasi dengan cloud! ✓",
+      toastDisconnected: "Koneksi sinkronisasi cloud diputuskan",
+      toastError: "Gagal sinkronisasi. Silakan periksa koneksi Anda."
     }
   }
 };
