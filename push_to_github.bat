@@ -62,6 +62,11 @@ if %errorlevel% neq 0 (
 echo.
 echo [4/4] Pushing code to GitHub (branch 'main')...
 git push -u origin main
+git remote get-url root-site >nul 2>nul
+if %errorlevel% equ 0 (
+    echo       Syncing to root user site (devittobk.github.io)...
+    git push -u root-site main >nul 2>nul
+)
 
 if %errorlevel% equ 0 (
     echo.
@@ -69,14 +74,12 @@ if %errorlevel% equ 0 (
     echo    SUCCESS! Code uploaded to GitHub!
     echo ======================================================================
     echo.
-    echo NEXT STEP TO ACTIVATE GITHUB PAGES (Takes 15 seconds):
-    echo 1. Open your repository on GitHub.
-    echo 2. Go to: Settings ^> Pages
-    echo 3. Under 'Build and deployment' ^> Source, select: 'GitHub Actions'
-    echo 4. Wait ~1 minute, then refresh! Your app is now live online!
+    echo YOUR LIVE WEB APP IS ACCESSIBLE AT:
+    echo   Primary Link:    https://devittobk.github.io/
+    echo   Repository Link: https://devittobk.github.io/flight-miles-calculator/
     echo.
     echo TO INSTALL ON YOUR PHONE (PWA):
-    echo - Open the live link in Safari (iPhone) or Chrome (Android)
+    echo - Open either link above in Safari (iPhone) or Chrome (Android)
     echo - Tap 'Share' or '...' ^> 'Add to Home Screen'
     echo - Now you have a native-style app with Pure Black AMOLED ^& Offline mode!
     echo ======================================================================
