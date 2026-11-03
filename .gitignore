@@ -1,0 +1,20 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Operating System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local IDE and editor configurations
+.vscode/
+.idea/
+
+# Test output screenshots (while keeping app icons)
+*.png
+!icons/*.png
+
+# Test cache
+.pytest_cache/

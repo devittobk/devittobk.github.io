@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0f1e"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </linearGradient>
+    <linearGradient id="indigoCyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#06b6d4" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  <!-- Pure black AMOLED base -->
+  <rect width="512" height="512" fill="#000000" rx="110"/>
+  <!-- Subtle border container -->
+  <rect x="24" y="24" width="464" height="464" rx="90" fill="url(#bgGlow)" stroke="#312e81" stroke-width="4"/>
+  <!-- Jet Contrail Curve -->
+  <path d="M 110 380 Q 220 320, 310 210 T 390 120" fill="none" stroke="url(#indigoCyan)" stroke-width="8" stroke-linecap="round" stroke-dasharray="14 8"/>
+  <!-- Airplane Silhouette -->
+  <path d="M 390 120 L 320 180 L 370 240 L 290 220 L 220 300 L 170 340 L 180 280 L 120 270 L 230 200 L 290 130 Z" fill="#ffffff" filter="url(#shadow)"/>
+  <!-- Golden Miles Coin Badge -->
+  <circle cx="150" cy="370" r="45" fill="#eab308" stroke="#ffffff" stroke-width="4" filter="url(#shadow)"/>
+  <text x="150" y="382" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="32" font-weight="900" fill="#000000" text-anchor="middle">M</text>
+</svg>
